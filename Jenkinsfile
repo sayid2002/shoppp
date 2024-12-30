@@ -12,7 +12,9 @@ pipeline {
                 ]) {
                     // Here, DOCKER_USERNAME will be the value of your Docker Hub username,
                     // and DOCKER_PASSWORD will be the value of your Docker Hub password.
-                    sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                    sh """
+                      echo \${DOCKER_PASSWORD} | docker login -u \${DOCKER_USERNAME} --password-stdin
+                    """
                 }
             }
         }
