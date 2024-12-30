@@ -1,9 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'php:8.2-fpm-alpine'
-        }
-    }
+    agent any
 
     stages {
         stage('Prepare') {
@@ -21,6 +17,9 @@ pipeline {
         }
 
         stage('Build') {
+            agent {
+                docker { image 'php:8.2-fpm-alpine' }
+            }
             steps {
                 sh '''
                     echo "Building Docker image..."
