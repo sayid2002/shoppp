@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  laravel-app:
+    image: sayid740/shop-01:latest
+    container_name: shop-01
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+    volumes:
+      - ./storage:/var/www/html/storage
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=123321
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
