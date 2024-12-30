@@ -2,18 +2,18 @@ pipeline {
     agent any  // Use any agent, or a specific label if needed
 
     stages {
-        stage('Prepare') {
+       stage('Prepare') {
             steps {
                 script {
                     checkout scm
                 }
-                withCredentials([
-                    usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
-                ]) {
-                    sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-                }
-            }
-        }
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    // Docker login using the credentials
+                    sh """
+                        docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+                    """
+             }
+        }}
 
         stage('Build') {
             agent none
