@@ -20,7 +20,7 @@ pipeline {
         }
 
         stage('Build') {
-            agent none  // Don't use agent for this stage
+            agent any
             steps {
                 script {
                     // Use docker container in this stage
