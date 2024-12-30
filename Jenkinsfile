@@ -27,6 +27,7 @@ pipeline {
                     docker.image('php:8.2-fpm-alpine').inside {
                         sh '''
                             echo "Building Docker image..."
+                            apk add --no-cache docker-compose
                             docker-compose -f docker-compose.yml build
                         '''
 
