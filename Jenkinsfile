@@ -33,8 +33,8 @@ pipeline {
 
                         sh '''
                             echo "Pushing Docker image to Docker Hub..."
-                            docker tag $DOCKER_HUB_USERNAME/$APP_NAME $DOCKER_HUB_USERNAME/$APP_NAME:latest
-                            docker push $DOCKER_HUB_USERNAME/$APP_NAME:latest
+                            docker tag $DOCKER_HUB_USERNAME/shop-01 $DOCKER_HUB_USERNAME/shop-01:latest
+                            docker push $DOCKER_HUB_USERNAME/shop-01:latest
                         '''
                     }
                 }
