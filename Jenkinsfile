@@ -32,9 +32,10 @@ pipeline {
                         '''
 
                         sh '''
-                            echo "Pushing Docker image to Docker Hub..."
-                            docker tag shop-01:latest $DOCKER_HUB_USERNAME/shop-01:latest
-                            docker push $DOCKER_HUB_USERNAME/shop-01:latest
+                              echo "Tagging and pushing Docker image to Docker Hub..."
+                               IMAGE_NAME="$DOCKER_USERNAME/shop-01:latest" // The image name is created HERE
+                               docker tag shop-01:latest "$IMAGE_NAME"
+                               docker push "$IMAGE_NAME"
                         '''
                     }
                 }
