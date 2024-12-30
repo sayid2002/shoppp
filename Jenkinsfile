@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent any  // Use any agent, or a specific label if needed
 
     stages {
         stage('Prepare') {
@@ -17,21 +17,24 @@ pipeline {
         }
 
         stage('Build') {
-            agent {
-                docker { image 'php:8.2-fpm-alpine' }
-            }
+            agent none
             steps {
-                sh '''
-                    echo "Building Docker image..."
-                    docker-compose -f docker-compose.yml build
-                '''
+                script {
+                    // Use docker container in this stage
+                    docker.image('php:8.2-fpm-alpine').inside {
+                        sh '''
+                            echo "Building Docker image..."
+                            docker-compose -f docker-compose.yml build
+                        '''
 
-                sh '''
-                    echo "Pushing Docker image to Docker Hub..."
-                    docker tag $DOCKER_HUB_USERNAME/$APP_NAME:$BUILD_NUMBER $DOCKER_HUB_USERNAME/$APP_NAME:latest
-                    docker push $DOCKER_HUB_USERNAME/$APP_NAME:$BUILD_NUMBER
-                    docker push $DOCKER_HUB_USERNAME/$APP_NAME:latest
-                '''
+                        sh '''
+                            echo "Pushing Docker image to Docker Hub..."
+                            docker tag $DOCKER_HUB_USERNAME/$APP_NAME:$BUILD_NUMBER $DOCKER_HUB_USERNAME/$APP_NAME:latest
+                            docker push $DOCKER_HUB_USERNAME/$APP_NAME:$BUILD_NUMBER
+                            docker push $DOCKER_HUB_USERNAME/$APP_NAME:latest
+                        '''
+                    }
+                }
             }
         }
 
@@ -71,5 +74,3 @@ pipeline {
         }
     }
 }
-
-
