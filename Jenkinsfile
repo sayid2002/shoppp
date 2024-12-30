@@ -24,7 +24,7 @@ pipeline {
             steps {
                 script {
                     // Use docker container in this stage
-                    docker.image('php:8.2-fpm-alpine').inside {
+                    docker.image('php:8.2-fpm-alpine').inside('--user root') {
                         sh '''
                             echo "Building Docker image..."
                             apk add --no-cache docker-compose
