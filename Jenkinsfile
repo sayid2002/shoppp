@@ -7,11 +7,9 @@ pipeline {
                 script {
                     checkout scm
                 }
-                withCredentials([usernamePassword(credentialsId: 'docker-credentials', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
-                    sh '''
-                        echo "Logging into Docker Hub..."
-                        echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
-                    '''
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    // Your Docker commands here, e.g.:
+                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
                 }
             }
         }
