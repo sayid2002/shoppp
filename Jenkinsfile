@@ -19,8 +19,8 @@ pipeline {
                     // and DOCKER_PASSWORD will be the value of your Docker Hub password.
                     sh '''
                         echo "Logging into Docker Hub..."
-                        mkdir -p $HOME/.docker
-                        chmod 700 $HOME/.docker
+                        mkdir -p root/.docker
+                        chmod 700 root/.docker
                         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
                     '''
                 }
