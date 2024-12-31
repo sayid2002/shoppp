@@ -1,50 +1,73 @@
 pipeline {
-    agent any  // Use any agent, or a specific label if needed
+    agent any
+
+    environment {
+        APP_NAME = "shop-01"
+        NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels"
+        DEPLOY_ENDPOINT = ""
+        DOCKER_IMAGE = "sayid740/shop-01:latest"
+    }
 
     stages {
         stage('Prepare') {
             steps {
                 script {
                     checkout scm
-                }
-                withCredentials([
-                    usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
-                ]) {
-                    // Here, DOCKER_USERNAME will be the value of your Docker Hub username,
-                    // and DOCKER_PASSWORD will be the value of your Docker Hub password.
-                    sh """
-                      echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin
-                    """
+                    withCredentials([
+                        usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
+                    ]) {
+                        sh '''
+                            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                        '''
+                    }
                 }
             }
         }
 
         stage('Build and Push') {
-                    steps {
-                        script {
-                            sh """
-                                docker-compose -f docker-compose.yml build
-                                docker tag sayid740/shop-01:latest sayid740/shop-01:latest
-                                docker push sayid740/shop-01:latest
-                            """
-                        }
-                    }
+            steps {
+                script {
+                    sh '''
+                        docker-compose -f docker-compose.yml build
+                        docker tag ${DOCKER_IMAGE} ${DOCKER_IMAGE}
+                        docker push ${DOCKER_IMAGE}
+                    '''
                 }
+            }
+        }
+
+        stage('Fetch ngrok URL') {
+            steps {
+                script {
+                    def response = httpRequest(url: NGROK_API_URL, acceptType: 'APPLICATION_JSON')
+                    def json = readJSON(text: response.content)
+                    def publicUrl = json.tunnels.find { it.proto == 'https' }?.public_url
+
+                    if (!publicUrl) {
+                        error "Failed to fetch ngrok URL. Ensure ngrok is running."
+                    }
+
+                    echo "Using ngrok URL: ${publicUrl}"
+                    env.DEPLOY_ENDPOINT = publicUrl
+                }
+            }
+        }
 
         stage('Deploy') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'deploy-key', keyVariable: 'DEPLOY_KEY')]) {
+                script {
                     sh '''
-                        echo "Deploying application..."
-                        ssh -i $DEPLOY_KEY $DEPLOY_USER@$DEPLOY_SERVER << 'ENDSSH'
-                        cd /var/www/html
-                        docker pull sayid740/shop-01:latest
-                        docker-compose down
-                        docker-compose up -d
-                        docker exec shop-01 php artisan migrate --force
-                        docker exec shop-01 php artisan config:cache
-                        docker exec shop-01 php artisan route:cache
-                        ENDSSH
+                        echo "Deploying application via ngrok..."
+                        curl -X POST ${DEPLOY_ENDPOINT}/deploy-endpoint -H "Authorization: Bearer <TOKEN>" -d '{"action": "deploy"}'
+
+                        echo "Running PHP artisan commands..."
+                        curl -X POST ${DEPLOY_ENDPOINT}/artisan-endpoint -H "Authorization: Bearer <TOKEN>" -d '{
+                            "commands": [
+                                "php artisan migrate --force",
+                                "php artisan config:cache",
+                                "php artisan route:cache"
+                            ]
+                        }'
                     '''
                 }
             }
@@ -52,16 +75,19 @@ pipeline {
 
         stage('Verify') {
             steps {
-                sh '''
-                    ssh $DEPLOY_USER@$DEPLOY_SERVER "docker ps | grep $APP_NAME"
-                '''
+                script {
+                    sh '''
+                        echo "Verifying deployment..."
+                        curl -I ${DEPLOY_ENDPOINT} || exit 1
+                    '''
+                }
             }
         }
     }
 
     post {
         always {
-            steps {
+            script {
                 sh 'docker logout'
             }
         }
