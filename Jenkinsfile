@@ -1,5 +1,10 @@
 pipeline {
-    agent any  // Use any agent, or a specific label if needed
+    agent {
+            docker {
+                image 'docker:latest'
+                args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
+            }
+        }
 
     stages {
         stage('Prepare') {
@@ -20,7 +25,6 @@ pipeline {
         }
 
         stage('Build') {
-            agent any
             steps {
                 script {
                     // Use docker container in this stage
@@ -43,17 +47,17 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'deploy-key', keyFileVariable: 'DEPLOY_KEY')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'deploy-key', keyVariable: 'DEPLOY_KEY')]) {
                     sh '''
                         echo "Deploying application..."
                         ssh -i $DEPLOY_KEY $DEPLOY_USER@$DEPLOY_SERVER << 'ENDSSH'
                         cd /var/www/html
-                        docker pull $DOCKER_HUB_USERNAME/$APP_NAME:latest
+                        docker pull sayid740/shop-01:latest
                         docker-compose down
                         docker-compose up -d
-                        docker exec laravel-app php artisan migrate --force
-                        docker exec laravel-app php artisan config:cache
-                        docker exec laravel-app php artisan route:cache
+                        docker exec shop-01 php artisan migrate --force
+                        docker exec shop-01 php artisan config:cache
+                        docker exec shop-01 php artisan route:cache
                         ENDSSH
                     '''
                 }
