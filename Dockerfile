@@ -2,23 +2,29 @@ FROM php:8.2-fpm-alpine as php
 
 WORKDIR /var/www/html
 
-RUN apk add --no-cache git curl libpng-dev libjpeg-turbo-dev libzip-dev \
-    freetype-dev icu-dev libxml2-dev libxslt-dev \
-    postgresql-dev postgresql-client \
-    && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql pdo_pgsql zip exif pcntl intl bcmath xml xsl opcache \
-    && docker-php-ext-enable gd intl opcache
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libzip-dev \
+    unzip \
+    git \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd \
+    && docker-php-ext-install pdo_mysql zip
 
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Copy application files
 COPY . /var/www/html
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-plugins \
-    && composer clear-cache
+# Install dependencies
+RUN composer install --no-interaction --no-dev --optimize-autoloader
 
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage
-
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html/storage
+RUN chown -R www-data:www-data /var/www/html/bootstrap/cache
 EXPOSE 9000
 
 CMD ["php-fpm"]
