@@ -3,7 +3,7 @@ FROM php:8.2-fpm-alpine as php
 # Set the working directory
 WORKDIR /var/www/html
 
-# Install system dependencies, including PHP extensions
+# Install necessary dependencies, including PHP extensions and required libraries for GD
 RUN apk add --no-cache \
     git \
     curl \
@@ -17,9 +17,16 @@ RUN apk add --no-cache \
     postgresql-dev \
     postgresql-client \
     bash \
-    && docker-php-ext-configure gd --with-jpeg \
+    && apk add --no-cache --virtual .build-deps \
+    libtool \
+    autoconf \
+    gcc \
+    g++ \
+    make \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype \
     && docker-php-ext-install gd pdo pdo_mysql pdo_pgsql zip exif pcntl intl bcmath xml xsl opcache \
-    && docker-php-ext-enable gd intl opcache
+    && docker-php-ext-enable gd intl opcache \
+    && apk del .build-deps  # Clean up build dependencies
 
 # Install Composer globally
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
