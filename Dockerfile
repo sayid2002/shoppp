@@ -1,44 +1,49 @@
-FROM php:8.2-fpm-alpine AS php
+FROM php:8.2-fpm-alpine as php
 
+# Set the working directory
 WORKDIR /var/www/html
 
-# Install system dependencies and PHP extensions in one go
+# Install necessary dependencies, including PHP extensions and required libraries for GD
 RUN apk add --no-cache \
-        git \
-        curl \
-        postgresql-dev \
-        libpq \
-        icu-dev \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        libfreetype-dev \
-        libzip-dev \
-        unzip \
-        bash \
+    git \
+    curl \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    libzip-dev \
+    freetype-dev \
+    icu-dev \
+    libxml2-dev \
+    libxslt-dev \
+    postgresql-dev \
+    postgresql-client \
+    bash \
     && apk add --no-cache --virtual .build-deps \
-        libtool \
-        autoconf \
-        make \
-        g++ \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-configure pgsql -with-pgsql=/usr/include/pgsql \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-install -j$(nproc) pdo pdo_pgsql gd intl bcmath xml json zip opcache \
-    && apk del .build-deps
+    libtool \
+    autoconf \
+    gcc \
+    g++ \
+    make \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype \
+    && docker-php-ext-install gd pdo pdo_mysql pdo_pgsql zip exif pcntl intl bcmath xml xsl opcache \
+    && docker-php-ext-enable gd intl opcache \
+    && apk del .build-deps  # Clean up build dependencies
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install Composer globally
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copy application files
+# Copy the application files to the container
 COPY . /var/www/html
 
-# Install Composer dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-plugins --no-scripts --prefer-dist \
+# Install PHP dependencies with Composer, without dev dependencies and optimizing autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-plugins --prefer-dist --no-scripts \
     && composer clear-cache
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Set appropriate permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage
 
+# Expose the port that PHP-FPM will run on
 EXPOSE 9000
 
+# Start the PHP-FPM server
 CMD ["php-fpm"]
