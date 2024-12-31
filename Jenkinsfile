@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-            docker {
-                image 'docker:latest'
-                args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
-            }
-        }
+    agent any  // Use any agent, or a specific label if needed
 
     stages {
         stage('Prepare') {
@@ -17,36 +12,24 @@ pipeline {
                 ]) {
                     // Here, DOCKER_USERNAME will be the value of your Docker Hub username,
                     // and DOCKER_PASSWORD will be the value of your Docker Hub password.
-                    sh '''
-                        echo "Logging into Docker Hub..."
-                        mkdir -p root/.docker
-                        chmod 700 root/.docker
-                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-                    '''
+                    sh """
+                      echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin
+                    """
                 }
             }
         }
 
-        stage('Build') {
-            steps {
-                script {
-                    // Use docker container in this stage
-                    docker.image('php:8.2-fpm-alpine').inside('--user root') {
-                        sh '''
-                            echo "Building Docker image..."
-                            apk add --no-cache docker-compose
-                            docker-compose -f docker-compose.yml build
-                        '''
-
-                        sh '''
-                            echo "Pushing Docker image to Docker Hub..."
-                            docker tag sayid740/shop-01:latest sayid740/shop-01:latest
-                            docker push sayid740/shop-01:latest
-                        '''
+        stage('Build and Push') {
+                    steps {
+                        script {
+                            sh """
+                                docker-compose -f docker-compose.yml build
+                                docker tag sayid740/shop-01:latest sayid740/shop-01:latest
+                                docker push sayid740/shop-01:latest
+                            """
+                        }
                     }
                 }
-            }
-        }
 
         stage('Deploy') {
             steps {
