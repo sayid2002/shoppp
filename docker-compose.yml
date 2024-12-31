@@ -1,14 +1,22 @@
 version: '3.8'
 
 services:
-  laravel-app:
+  shop-01:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: sayid740/shop-01:latest
     container_name: shop-01
     restart: unless-stopped
+    ports:
+      - "80:80"
     environment:
-      - APP_ENV=production
-      - DB_CONNECTION=pgsql
-      - DB_HOST=postgres
+        - APP_ENV=production
+        - DB_CONNECTION=pgsql
+        - DB_HOST=postgres
+        - DB_DATABASE=postgres
+        - DB_USERNAME=root
+        - DB_PASSWORD=123321
     volumes:
       - ./storage:/var/www/html/storage
       -  /var/run/docker.sock:/var/run/docker.sock
