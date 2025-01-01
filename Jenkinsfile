@@ -8,21 +8,21 @@ pipeline {
         DOCKER_IMAGE = "sayid740/shop-01:latest"
     }
 
-    stages {
-        stage('Prepare') {
-            steps {
-                script {
-                    checkout scm
-                    withCredentials([
-                        usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
-                    ]) {
-                        bat '''
-                            echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
-                        '''
-                    }
-                }
-            }
-        }
+      stage('Prepare') {
+               steps {
+                   script {
+                       checkout scm
+                       withCredentials([
+                           usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
+                       ]) {
+                           bat '''
+                               docker logout
+                               echo %DOCKER_PASSWORD% | docker --debug login -u %DOCKER_USERNAME% --password-stdin
+                           '''
+                       }
+                   }
+               }
+           }
 
         stage('Build and Push') {
             steps {
