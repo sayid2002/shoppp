@@ -8,32 +8,22 @@ pipeline {
         DOCKER_IMAGE = "sayid740/shop-01:latest"
     }
 
-      pipeline {
-          agent any
-
-          environment {
-              APP_NAME = "shop-01"
-              NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels"
-              DEPLOY_ENDPOINT = ""
-              DOCKER_IMAGE = "sayid740/shop-01:latest"
-          }
-
-          stages {
-              stage('Prepare') {
-                  steps {
-                      script {
-                          checkout scm
-                          withCredentials([
-                              usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
-                          ]) {
-                              bat '''
-                                  docker logout
-                                  echo %DOCKER_PASSWORD% | docker --debug login -u %DOCKER_USERNAME% --password-stdin
-                              '''
-                          }
-                      }
-                  }
-              }
+    stages {
+        stage('Prepare') {
+            steps {
+                script {
+                    checkout scm
+                    withCredentials([
+                        usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
+                    ]) {
+                        bat '''
+                            docker logout
+                            echo %DOCKER_PASSWORD% | docker --debug login -u %DOCKER_USERNAME% --password-stdin
+                        '''
+                    }
+                }
+            }
+        }
 
         stage('Build and Push') {
             steps {
@@ -104,9 +94,3 @@ pipeline {
         }
     }
 }
-
-
-
-
-
-
